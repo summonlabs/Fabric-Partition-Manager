@@ -1,0 +1,61 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+if(NOT WIN32)
+  find_dependency(Threads)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/FabricPartitionManagerTargets.cmake")
+
+set(FabricPartitionManager_VERSION "@PROJECT_VERSION@")
+
+# ---------------------------------------------------------------------------
+# Fail-fast package self-check. CMake does not export ALIAS targets, so the
+# documented imported target name is verified here rather than assumed, along
+# with the include directory and the umbrella header it must expose.
+# ---------------------------------------------------------------------------
+if(NOT TARGET SummonSoftwareLabs::FabricPartitionManager)
+  set(FabricPartitionManager_FOUND FALSE)
+  set(FabricPartitionManager_NOT_FOUND_MESSAGE
+    "the installed package does not export SummonSoftwareLabs::FabricPartitionManager")
+  return()
+endif()
+
+get_target_property(_fpm_includes SummonSoftwareLabs::FabricPartitionManager
+                    INTERFACE_INCLUDE_DIRECTORIES)
+if(NOT _fpm_includes)
+  set(FabricPartitionManager_FOUND FALSE)
+  set(FabricPartitionManager_NOT_FOUND_MESSAGE
+    "the exported target does not declare INTERFACE_INCLUDE_DIRECTORIES")
+  return()
+endif()
+
+set(_fpm_token "$")
+string(APPEND _fpm_token "{_IMPORT_PREFIX}")
+
+set(_fpm_umbrella_found FALSE)
+foreach(_fpm_dir IN LISTS _fpm_includes)
+  if(_fpm_dir MATCHES "^\\$<")
+    continue()
+  endif()
+  string(REPLACE "${_fpm_token}" "${PACKAGE_PREFIX_DIR}" _fpm_resolved "${_fpm_dir}")
+  if(EXISTS "${_fpm_resolved}/fabric_partition_manager/fabric_partition_manager.hpp")
+    set(_fpm_umbrella_found TRUE)
+  endif()
+endforeach()
+
+if(NOT _fpm_umbrella_found)
+  set(FabricPartitionManager_FOUND FALSE)
+  set(FabricPartitionManager_NOT_FOUND_MESSAGE
+    "the installed package is missing fabric_partition_manager/fabric_partition_manager.hpp")
+  return()
+endif()
+
+unset(_fpm_includes)
+unset(_fpm_token)
+unset(_fpm_dir)
+unset(_fpm_resolved)
+unset(_fpm_umbrella_found)
+
+check_required_components(FabricPartitionManager)

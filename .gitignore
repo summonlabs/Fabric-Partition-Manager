@@ -1,0 +1,59 @@
+# Build trees
+/build/
+build/
+out/
+cmake-build-*/
+_install/
+install-prefix/
+staging/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeUserPresets.json
+cmake_install.cmake
+CTestTestfile.cmake
+Testing/
+*.cmake.in.bak
+
+# Compiler / linker output
+*.obj
+*.o
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.pdb
+*.ilk
+*.exp
+*.idb
+*.gcda
+*.gcno
+
+# Sanitizer and analysis artifacts
+*.su
+*.sarif
+asan*.log
+
+# Editor / tooling state
+.vs/
+.vscode/
+.idea/
+*.user
+*.swp
+*~
+
+# Local scratch, logs and dumps
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+core
+core.*
+*.dmp
+*.stackdump
+scratch/
+tmp/
