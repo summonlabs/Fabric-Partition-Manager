@@ -1,7 +1,7 @@
 # Fabric Partition Manager
 
 **Fabric Partition Manager is the authoritative representation and governance runtime for partially
-disconnected fabric components of the Distributed Fabric Infrastructure / Fabric OS stack.** It
+disconnected fabric components.** It
 answers exactly one question:
 
 > Given authoritative topology and reachability evidence showing a partially disconnected fabric,
