@@ -394,3 +394,15 @@ FPM_TEST(protocol, a_replayed_frame_sequence_is_refused) {
   server.stop();
   FPM_CHECK(server.stats().replay_rejections >= 1u);
 }
+
+FPM_TEST(protocol, a_second_listener_cannot_take_a_listening_port) {
+  fpm::detail::Socket first;
+  std::uint16_t port = 0;
+  std::string error;
+  FPM_CHECK(first.listen_on("127.0.0.1", 0, port, error));
+  fpm::detail::Socket second;
+  std::uint16_t second_port = 0;
+  std::string second_error;
+  // Two coordinators must never share one listening port: the second bind fails.
+  FPM_CHECK(!second.listen_on("127.0.0.1", port, second_port, second_error));
+}

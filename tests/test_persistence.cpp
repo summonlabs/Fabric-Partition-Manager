@@ -1,7 +1,10 @@
 // Fabric Partition Manager 1.0.0 - Summon Software Labs
 #include <algorithm>
+#include <chrono>
+#include <fstream>
 #include <memory>
 #include <string>
+#include <thread>
 #include <vector>
 
 #include "fixture.hpp"
@@ -503,4 +506,36 @@ FPM_TEST(persistence, memory_only_runtime_persists_nothing) {
   runtime.close();
   FPM_CHECK(!std::filesystem::exists(workspace.path() / "partition.journal"));
   FPM_CHECK(!std::filesystem::exists(workspace.path() / "partition.snapshot"));
+}
+
+FPM_TEST(persistence, a_compaction_waits_for_a_reader_of_the_snapshot_to_close) {
+  TempDirectory workspace;
+  write_journal(workspace.path(), {"one", "two"});
+  fpm::DurableStore store(workspace.path() / "partition.journal",
+                          workspace.path() / "partition.snapshot", test_limits());
+  FPM_CHECK(store.load().ok);
+  FPM_CHECK(store.open_for_append());
+  FPM_CHECK(store.compact());
+  FPM_CHECK(store.append(fpm::DurableRecordType::PolicyDefinition, 3, payload_of("three")));
+  bool reader_opened = false;
+  bool compacted = false;
+  {
+    // Another tool reading the store (an inspection, a scan) holds the snapshot
+    // open while the next compaction replaces it, and closes it shortly after.
+    std::ifstream reader(workspace.path() / "partition.snapshot", std::ios::binary);
+    reader_opened = reader.is_open();
+    std::thread writer([&store, &compacted] { compacted = store.compact(); });
+    std::this_thread::sleep_for(std::chrono::milliseconds(300));
+    reader.close();
+    writer.join();
+  }
+  store.close();
+  FPM_CHECK(reader_opened);
+  // The compaction waits for the reader instead of being skipped.
+  FPM_CHECK(compacted);
+  bool ok = false;
+  bool torn = false;
+  const std::vector<std::string> loaded = read_journal(workspace.path(), ok, torn);
+  FPM_CHECK(ok);
+  FPM_EQ(loaded, (std::vector<std::string>{"one", "two", "three"}));
 }
